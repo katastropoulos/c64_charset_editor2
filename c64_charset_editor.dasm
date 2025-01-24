@@ -1,14 +1,29 @@
-
+; ------------------------------------------------------------------------------
+; Ioannis Karagiorgos, Dortmund, Germany, 01.2025
+; My try of rewriting a characterset editor I made when I was 14 in 1987 for the Commodore 64
+; I was using a Commodore 128D then and SMON for writing assembly directly into machine code
+; did not know assemblers then
+; ------------------------------------------------------------------------------
  include "cartheader.dasm"
 
 Start
 	jsr SetBorderColor
 	jsr DisplayCharset
+        jsr DrawEditAreaBorder
+        ldx #$01
+        ldy #$01
+        lda #$01        
+        jsr DisplayCharAtPos
+
+.LoopExit
+	jmp .		; infinite loop
 
 
+
+; ------------------------------------------------------------------------------
 ; Display the characterset at the very bottom of the screen in 7 rows
-SUBROUTINE 
-DisplayCharset
+; ------------------------------------------------------------------------------
+DisplayCharset SUBROUTINE 
 	pha
         txa
         pha
@@ -23,26 +38,57 @@ DisplayCharset
         pla
         rts
 
+; ------------------------------------------------------------------------------
 ; sets the border color to create some contrast
-SUBROUTINE 
-SetBorderColor
+; ------------------------------------------------------------------------------
+SetBorderColor SUBROUTINE 
 	pha
         lda #$00
         sta $d020
         pla
         rts
-        
-SUBROUTINE 
-DrawEditAreaBorder
+
+; ------------------------------------------------------------------------------
+; Draws a rectangle aroudn the area where a character is displayed zoomed
+; ------------------------------------------------------------------------------
+DrawEditAreaBorder SUBROUTINE
 	pha
         ldx #$10
-        lda #$00
+        lda #79
+.HorizontalLoop
         sta $0400,x
+        sta $0400+9*40,x
         dex
-        sta 
+	bpl .HorizontalLoop
+.VerticalLoop
+        ldx #$08
+        sta $0400+40
         pla
         rts
         
+; ------------------------------------------------------------------------------       
+; Displays the character in register a at position x,y
+; the display coordinates start from the top left corner!
+; ------------------------------------------------------------------------------
+DisplayCharAtPos
+	sta .SaveAkku
+        txa
+        pha
+        tya
+        pha
+        
+        
+        
+        pla
+        tay
+        pla
+        tax
+        lda .SaveAkku
+        rts
+.SaveAkku
+	byte 0
+
+
 Message
 	; PETSCII - http://sta.c64.org/cbm64pet.html
 	byte "HELLO WORLD!"
