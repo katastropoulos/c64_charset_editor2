@@ -6,6 +6,10 @@
 ; ------------------------------------------------------------------------------
  include "cartheader.dasm"
 
+; Constants
+SCRN = $0400
+BORDERCOLOR = $D020
+
 Start
 	jsr SetBorderColor
 	jsr DisplayCharset
@@ -30,7 +34,7 @@ DisplayCharset SUBROUTINE
 	ldx #$00
 .Loop
         txa
-	sta $0400+40*18,x
+	sta SCRN+40*18,x
         dex
         bne .Loop
         pla
@@ -44,7 +48,7 @@ DisplayCharset SUBROUTINE
 SetBorderColor SUBROUTINE 
 	pha
         lda #$00
-        sta $d020
+        sta BORDERCOLOR
         pla
         rts
 
@@ -56,13 +60,13 @@ DrawEditAreaBorder SUBROUTINE
         ldx #$10
         lda #79
 .HorizontalLoop
-        sta $0400,x
-        sta $0400+9*40,x
+        sta SCRN,x
+        sta SCRN+9*40,x
         dex
 	bpl .HorizontalLoop
 .VerticalLoop
         ldx #$08
-        sta $0400+40
+        sta SCRN+40
         pla
         rts
         
@@ -87,7 +91,6 @@ DisplayCharAtPos
         rts
 .SaveAkku
 	byte 0
-
 
 Message
 	; PETSCII - http://sta.c64.org/cbm64pet.html
