@@ -14,9 +14,9 @@ Start
 	jsr SetBorderColor
 	jsr DisplayCharset
         jsr DrawEditAreaBorder
-        ldx #$01
-        ldy #$01
-        lda #$01        
+        ldx #10
+        ldy #10
+        lda #65        
         jsr DisplayCharAtPos
 
 .LoopExit
@@ -53,7 +53,7 @@ SetBorderColor SUBROUTINE
         rts
 
 ; ------------------------------------------------------------------------------
-; Draws a rectangle aroudn the area where a character is displayed zoomed
+; Draws a rectangle around the area where a character is displayed zoomed
 ; ------------------------------------------------------------------------------
 DrawEditAreaBorder SUBROUTINE
 	pha
@@ -81,8 +81,27 @@ DisplayCharAtPos
         tya
         pha
         
-        
-        
+        ; store $0400 in $fb/fc and add y times 40 bytes to calculate the correct row
+        ; in video memory
+        lda #$00
+        sta $fb
+        lda #$40
+        sta $fc
+.CalculateRow	
+	cpy #$00
+        beq .DisplayChar
+        clc		
+	lda $fb
+	adc #40
+	sta $fb
+        bcc .SkipHiByte   
+        inc $fc
+.SkipHiByte
+        dey
+        jmp .CalculateRow
+.DisplayChar
+        lda .SaveAkku
+        sta ($fb),x
         pla
         tay
         pla
