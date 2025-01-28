@@ -53,16 +53,34 @@ SetBorderColor SUBROUTINE
 ; ------------------------------------------------------------------------------
 DrawEditAreaBorder SUBROUTINE
 	pha
-        ldx #$10
-        lda #79
-.HorizontalLoop
-        sta SCRN,x
-        sta SCRN+9*40,x
+        txa
+        pha
+        tya
+        pha
+        
+	ldy #10
+        lda #102
+.DisplayRows     
+        ldx #0
+        jsr DisplayCharacter
+        ldx #10
+        jsr DisplayCharacter
+        dey
+        bpl .DisplayRows
+
+	ldx #10
+.DisplayColumns     
+        ldy #0
+        jsr DisplayCharacter
+        ldy #10
+        jsr DisplayCharacter
         dex
-	bpl .HorizontalLoop
-.VerticalLoop
-        ldx #$08
-        sta SCRN+40
+        bpl .DisplayColumns
+
+	pla
+        tay
+        pla
+        tax
         pla
         rts
         
@@ -72,7 +90,7 @@ DrawEditAreaBorder SUBROUTINE
 ;   register y = column 0..39
 ;   register x = row 0..24
 ; ------------------------------------------------------------------------------
-DisplayCharAtPos
+DisplayCharacter
 	sta .SaveAkku
         txa
         pha
