@@ -9,11 +9,16 @@
 ; Constants
 SCRN = $0400
 BORDERCOLOR = $D020
+RASTERIRQ_UPPER_LINE = 106
+RASTERIRQ_LOWER_LINE = 180
 
 Start
+	lda #0
 	jsr SetBorderColor
 	jsr DisplayCharset
         jsr DrawEditAreaBorder
+        jsr EnableCursor
+        jsr EnableVICInterrupt
 
 .LoopExit
 	jmp .		; infinite loop
@@ -40,10 +45,10 @@ DisplayCharset SUBROUTINE
 
 ; ------------------------------------------------------------------------------
 ; sets the border color to create some contrast
+; border color is in register a
 ; ------------------------------------------------------------------------------
 SetBorderColor SUBROUTINE 
 	pha
-        lda #$00
         sta BORDERCOLOR
         pla
         rts
@@ -127,6 +132,75 @@ DisplayCharacter
 .SaveAkku
 	byte 0
 
+
+; ------------------------------------------------------------------------------
+; Code is from here: https://www.c64-wiki.de/wiki/Rasterzeilen-Interrupt
+; enables the raster interrupt
+; ------------------------------------------------------------------------------
+EnableVICInterrupt
+       	sei
+
+        lda RASTERIRQ_UPPER_LINE
+        sta $d012
+        lda $d011      
+        and #$7f
+        sta $d011
+
+        lda $d01a      
+        ora #$01
+        sta $d01a
+
+        lda #<VICInterruptHandler
+        sta $0314
+        lda #>VICInterruptHandler
+        sta $0315
+
+        cli
+        rts
+         
+VICInterruptHandler
+ 	lda $d019      ; Test auf VIC-Interrupt
+        bmi .vic_irq
+
+        lda $dc0d      ; Timer-Interrupt bestätigen
+        cli            ; Neuen VIC-Interrupt zulasen
+        jmp $ea31      ; System-Interrupt ausführen
+
+.vic_irq
+	sta $d019      ; VIC-Interrupt bestätigen
+
+        lda $d012      ; Prüfen, in welcher Zeile der
+        cmp #RASTERIRQ_UPPER_LINE       ; Rasterzeilen-Interrupt auftrat
+        bne .lower_irq
+	; oberer irq
+        lda #0      
+        jsr SetBorderColor
+ 
+        lda #RASTERIRQ_LOWER_LINE       ; Nächster Rasterzeilen-Interrupt
+        sta $d012     
+        bne .finish_irq
+.lower_irq
+        lda #1      
+        jsr SetBorderColor
+        lda #RASTERIRQ_UPPER_LINE       ; Nächster Rasterzeilen-Interrupt
+        sta $d012      ; in Zeile 106
+
+.finish_irq
+        pla            ; Interrupt geordnet beenden
+        tay
+        pla
+        tax
+        pla
+        rti
+
+EnableCursor
+  	lda #$00
+    	sta $cc ;activate cursor
+	clc
+        ldx #0
+        ldy #0
+        jsr $fff0
+        rts
 Message
 	; PETSCII - http://sta.c64.org/cbm64pet.html
 	byte "HELLO WORLD!"
