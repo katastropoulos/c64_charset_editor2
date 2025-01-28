@@ -14,10 +14,6 @@ Start
 	jsr SetBorderColor
 	jsr DisplayCharset
         jsr DrawEditAreaBorder
-        ldx #10
-        ldy #10
-        lda #65        
-        jsr DisplayCharAtPos
 
 .LoopExit
 	jmp .		; infinite loop
@@ -71,8 +67,10 @@ DrawEditAreaBorder SUBROUTINE
         rts
         
 ; ------------------------------------------------------------------------------       
-; Displays the character in register a at position x,y
-; the display coordinates start from the top left corner!
+; Displays a character on screen
+;   register a = character
+;   register y = column 0..39
+;   register x = row 0..24
 ; ------------------------------------------------------------------------------
 DisplayCharAtPos
 	sta .SaveAkku
@@ -81,14 +79,14 @@ DisplayCharAtPos
         tya
         pha
         
-        ; store $0400 in $fb/fc and add y times 40 bytes to calculate the correct row
-        ; in video memory
+        ; store $0400 in $fb/fc and add x times 40 bytes to calculate the correct row
+        ; in video memory. the desired row is in register x
         lda #$00
         sta $fb
-        lda #$40
+        lda #$04
         sta $fc
 .CalculateRow	
-	cpy #$00
+	cpx #$00
         beq .DisplayChar
         clc		
 	lda $fb
@@ -97,11 +95,11 @@ DisplayCharAtPos
         bcc .SkipHiByte   
         inc $fc
 .SkipHiByte
-        dey
-        jmp .CalculateRow
+        dex
+        bne .CalculateRow
 .DisplayChar
         lda .SaveAkku
-        sta ($fb),x
+        sta ($fb),y
         pla
         tay
         pla
